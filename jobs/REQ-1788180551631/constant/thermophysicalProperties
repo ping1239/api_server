@@ -1,0 +1,47 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      thermophysicalProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+thermoType
+{
+    type            heRhoThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState rhoConst;
+    specie          specie;
+    energy          sensibleEnthalpy;
+}
+
+mixture
+{
+    specie
+    {
+        molWeight       28.05;
+    }
+    equationOfState
+    {
+        rho             780; // 밀도 (kg/m^3)
+    }
+    thermodynamics
+    {
+        Cp              2800; // 비열 (J/kg*K)
+        Hf              0;
+    }
+    transport
+    {
+        mu              0; // 점성은 transportProperties에서 따로 제어
+        Pr              0.7; // Prandtl number
+        kappa           0.25; // 열전도도 (W/m*K)
+    }
+}

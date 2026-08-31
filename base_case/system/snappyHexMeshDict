@@ -1,0 +1,37 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2112                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Dummy file to demonstrate boundary condition coordinate extraction
+
+geometry
+{
+    gate_patch
+    {
+        type searchableSphere;
+        centre (REPLACE_GATE_X REPLACE_GATE_Y REPLACE_GATE_Z);
+        radius 0.0025; // to be replaced dynamically later
+    }
+    
+    vent_patch
+    {
+        type searchableSphere;
+        centre (REPLACE_VENT_X REPLACE_VENT_Y REPLACE_VENT_Z);
+        radius 0.001;
+    }
+}
+
+// ... other snappy parameters ...

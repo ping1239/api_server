@@ -1,0 +1,38 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 0 1 0 0 0]; // 온도의 차원(Kelvin)
+
+internalField   uniform 323.15; // 내부 초기 온도
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 493.15; // 사출기 노즐에서 들어오는 수지 온도
+    }
+    walls
+    {
+        type            fixedValue;
+        value           uniform 323.15; // 금형 벽면의 온도
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+}
+// ************************************************************************* //

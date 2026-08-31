@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0]; // 속도의 차원 (m/s)
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        // 사출 속도 (JSON에서 mm/s로 들어오면 m/s로 변환하여 적용)
+        // 방향이 Z축(-Z방향)이라고 가정한 예시
+        value           uniform (0 0 REPLACE_INJECTION_SPEED_M_S);
+    }
+    walls
+    {
+        type            noSlip; // 벽면에서는 속도 0
+    }
+    outlet
+    {
+        type            zeroGradient;
+    }
+}

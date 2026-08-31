@@ -1,0 +1,36 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2212                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    object      p;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [1 -1 -2 0 0 0 0]; // 압력의 차원 (Pa 또는 kg/(m*s^2))
+
+internalField   uniform 100000;
+
+boundaryField
+{
+    inlet
+    {
+        type            zeroGradient; 
+        // 사출 속도 제어 시 압력은 zeroGradient로 두는 경우가 많음
+        // 보압 제어 시에는 fixedValue 로 REPLACE_HOLDING_PRESSURE_PA 적용
+    }
+    walls
+    {
+        type            zeroGradient;
+    }
+    outlet
+    {
+        type            fixedValue;
+        value           uniform 0; // 출구 대기압
+    }
+}
