@@ -59,7 +59,7 @@ async def start_simulation(
     
     return {"message": "Simulation started", "job_id": job_id, "status": "PENDING"}
 
-@app.get("/api/status/{job_id}")
+@app.get("/api/simulation/status/{job_id}")
 async def get_status(job_id: str):
     if job_id not in job_status_db:
         raise HTTPException(status_code=404, detail="Job not found")

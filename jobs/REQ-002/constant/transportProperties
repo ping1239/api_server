@@ -1,0 +1,35 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2112                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (phase1);
+
+phase1
+{
+    transportModel  CrossWLF;
+    
+    CrossWLFCoeffs
+    {
+        n               0.35;
+        tauStar         20000;
+        D1              1.1e13; // default or placeholder
+        D2              403.15; // e.g. 130 C
+        D3              0;
+        A1              25.0;
+        A2              51.6;
+        T0              383.15; // e.g. 110 C
+    }
+}

@@ -147,27 +147,42 @@ def run_simulation(job_id: str, parameters: dict, db: dict):
             
         # 5. 완료
         db[job_id]["status"] = "COMPLETED"
+        
+        # PDF 기획서에 맞춘 풍부한 더미 결과 데이터 생성
         result_data = {
-            "job_id": job_id,
-            "status": "COMPLETED",
-            "heatmap_url": f"/jobs/{job_id}/heatmap.png"
+            "simulation_id": job_id,
+            "status": "completed",
+            "summary": {
+                "fill_percent": 98.4,
+                "fill_time_s": 0.417,
+                "max_pressure_mpa": 81.3,
+                "min_temperature_c": 174.2,
+                "max_temperature_c": proc_cond.get("melt_temperature_C", 220.0), # 입력값 연동
+                "max_shear_rate_1_s": 11830
+            },
+            "heatmaps": {
+                "fill": f"/results/{job_id}/fill.vtu",
+                "pressure": f"/results/{job_id}/pressure.vtu",
+                "temperature": f"/results/{job_id}/temperature.vtu",
+                "shear": f"/results/{job_id}/shear.vtu"
+            }
         }
         
         # 🌟 [웹훅 발송 부분] 메인 서버로 결과 전송!
-        webhook_url = parameters.get("webhook_url") # 메인 서버가 처음에 알려준 주소
+        # JSON에 webhook_url이 없으면 기본 주소(프론트엔드 포트 등)로 쏘도록 fallback 설정
+        webhook_url = parameters.get("webhook_url", "http://localhost:5174/api/webhook") 
+        
         if webhook_url:
             try:
-                requests.post(webhook_url, json=result_data)
-                print(f"[{job_id}] 메인 서버로 완료 알림(Webhook) 전송 성공!")
+                requests.post(webhook_url, json=result_data, timeout=5)
+                print(f"[{job_id}] 메인 서버({webhook_url})로 완료 알림(Webhook) 전송 성공!")
             except Exception as e:
-                print(f"[{job_id}] 웹훅 전송 실패: {e}")
+                print(f"[{job_id}] 웹훅 전송 실패 (서버가 켜져있지 않거나 주소가 다름): {e}")
                 
         db[job_id]["progress"] = 100
-        db[job_id]["results"] = {
-            "heatmap_url": f"/jobs/{job_id}/heatmap.png",
-            "message": "해석 완료"
-        }
-        print(f"[{job_id}] 전체 시뮬레이션 완료!")
+        db[job_id]["results"] = result_data
+        print(f"[{job_id}] 전체 시뮬레이션 완료 및 결과 생성 끝!")
+
         
     except subprocess.CalledProcessError as e:
         # OpenFOAM 명령어 실행 실패 시 잡아내는 예외 처리
