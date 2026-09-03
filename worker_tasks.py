@@ -189,8 +189,8 @@ def run_simulation(job_id: str, parameters: dict, db: dict):
         }
         
         # 🌟 [웹훅 발송 부분] 메인 서버로 결과 전송!
-        # JSON에 webhook_url이 없으면 기본 주소(프론트엔드 포트 등)로 쏘도록 fallback 설정
-        webhook_url = parameters.get("webhook_url", "http://localhost:5174/api/webhook") 
+        # JSON에 webhook_url이 없으면 기본 주소(메인 서버 IP)로 쏘도록 fallback 설정
+        webhook_url = parameters.get("webhook_url", "http://192.168.0.79:5174/api/webhook") 
         
         if webhook_url:
             try:

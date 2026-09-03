@@ -10,7 +10,9 @@ app = FastAPI(title="OpenFOAM Worker Agent")
 # CORS 설정 (프론트엔드 포트 허용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5174", "http://localhost:5174"],
+    # CORS 허용 주소에는 뒤에 /api/... 같은 경로를 붙이면 절대 안 됩니다! (IP와 포트까지만 작성)
+    # 맘 편하게 모든 접속을 허용하려면 ["*"] 로 두시면 됩니다.
+    allow_origins=["http://192.168.0.79:5174", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
