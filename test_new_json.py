@@ -9,12 +9,16 @@ payload = {
   
   "boundary_conditions": {
     "gate": {
-      "position": {"x": 10.5, "y": -5.2, "z": 0.0},
-      "diameter_mm": 2.5
+      "position": { "x": -5.06, "y": -2.48, "z": 4.89 },
+      "shape": "rectangular",
+      "diameter_mm": 0,
+      "width_mm": 5.0,
+      "thickness_mm": 1.5
     },
     "vent": {
-      "position": {"x": -15.0, "y": 8.0, "z": 2.1},
-      "diameter_mm": 1.0
+      "position": { "x": -2.50, "y": -2.48, "z": 6.14 },
+      "width_mm": 5.0,
+      "depth_mm": 0.02
     }
   },
 
@@ -64,7 +68,7 @@ try:
     if response.status_code == 202:
         for _ in range(5):
             time.sleep(3)
-            status_res = requests.get(f"http://127.0.0.1:8000/api/status/REQ-003")
+            status_res = requests.get(f"http://127.0.0.1:8000/api/simulation/status/REQ-003")
             print("현재 상태:", status_res.json()["status"])
             if status_res.json()["status"] == "COMPLETED":
                 break

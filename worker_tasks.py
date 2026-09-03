@@ -58,11 +58,28 @@ def run_simulation(job_id: str, parameters: dict, db: dict):
         solver_ctrl = parameters.get("solver_control", {})
         
         # 🌟 속도 계산 로직 (유량 / 단면적)
-        gate_dia = bounds.get("gate", {}).get("diameter_mm", 2.5)
+        gate_info = bounds.get("gate", {})
+        gate_shape = gate_info.get("shape", "circular")
+        
         import math
-        gate_area = math.pi * ((gate_dia / 1000.0) / 2.0)**2
+        if gate_shape == "rectangular":
+            w = gate_info.get("width_mm", 5.0) / 1000.0
+            t = gate_info.get("thickness_mm", 1.5) / 1000.0
+            gate_area = w * t
+        else:
+            gate_dia = gate_info.get("diameter_mm", 2.5)
+            gate_area = math.pi * ((gate_dia / 1000.0) / 2.0)**2
+            
         flow_rate_m3_s = proc_cond.get("flow_rate_cm3_s", 20) * 1e-6
         velocity_m_s = flow_rate_m3_s / gate_area if gate_area > 0 else 0
+        
+        # 기획서(PDF) 검증 조건: 계산된 단면적과 유속 로그 출력
+        print(f"[{job_id}] Gate Shape: {gate_shape}, Area: {gate_area:.8f} m^2, Velocity: {velocity_m_s:.2f} m/s")
+        
+        # 벤트 크기 추출 (추후 snappyHexMesh 등 3D 바운더리 박스 설정 대비)
+        vent_info = bounds.get("vent", {})
+        vent_width = vent_info.get("width_mm", 5.0)
+        vent_depth = vent_info.get("depth_mm", 0.02)
         
         resin = materials.get("resin", {}).get("properties", {})
         
@@ -96,6 +113,9 @@ def run_simulation(job_id: str, parameters: dict, db: dict):
             "REPLACE_VENT_X": bounds.get("vent", {}).get("position", {}).get("x", 0),
             "REPLACE_VENT_Y": bounds.get("vent", {}).get("position", {}).get("y", 0),
             "REPLACE_VENT_Z": bounds.get("vent", {}).get("position", {}).get("z", 0),
+            "REPLACE_VENT_WIDTH": vent_width,
+            "REPLACE_VENT_DEPTH": vent_depth,
+            "REPLACE_GATE_SHAPE": gate_shape,
         }
         
         # TODO 2: 파라미터에 맞게 파일 내용 수정 (주석 해제 완료)
