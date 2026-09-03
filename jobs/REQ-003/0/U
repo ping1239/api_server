@@ -23,7 +23,7 @@ boundaryField
         type            fixedValue;
         // 사출 속도 (JSON에서 mm/s로 들어오면 m/s로 변환하여 적용)
         // 방향이 Z축(-Z방향)이라고 가정한 예시
-        value           uniform (0 0 4.074366543152521);
+        value           uniform (0 0 2.6666666666666665);
     }
     walls
     {

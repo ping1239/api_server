@@ -2,35 +2,37 @@
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
 |  \\    /   O peration     | Version:  v2212                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volVectorField;
-    object      U;
+    class       volScalarField;
+    object      T;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 -1 0 0 0 0]; // 속도의 차원 (m/s)
+dimensions      [0 0 0 1 0 0 0]; // 온도의 차원(Kelvin)
 
-internalField   uniform (0 0 0);
+internalField   uniform 323.15; // 내부 초기 온도
 
 boundaryField
 {
     inlet
     {
         type            fixedValue;
-        // 사출 속도 (JSON에서 mm/s로 들어오면 m/s로 변환하여 적용)
-        // 방향이 Z축(-Z방향)이라고 가정한 예시
-        value           uniform (0 0 4.074366543152521);
+        value           uniform 493.15; // 사출기 노즐에서 들어오는 수지 온도
     }
     walls
     {
-        type            noSlip; // 벽면에서는 속도 0
+        type            fixedValue;
+        value           uniform 323.15; // 금형 벽면의 온도
     }
     outlet
     {
         type            zeroGradient;
     }
 }
+// ************************************************************************* //

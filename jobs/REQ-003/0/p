@@ -7,30 +7,30 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volVectorField;
-    object      U;
+    class       volScalarField;
+    object      p;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 -1 0 0 0 0]; // 속도의 차원 (m/s)
+dimensions      [1 -1 -2 0 0 0 0]; // 압력의 차원 (Pa 또는 kg/(m*s^2))
 
-internalField   uniform (0 0 0);
+internalField   uniform 100000;
 
 boundaryField
 {
     inlet
     {
-        type            fixedValue;
-        // 사출 속도 (JSON에서 mm/s로 들어오면 m/s로 변환하여 적용)
-        // 방향이 Z축(-Z방향)이라고 가정한 예시
-        value           uniform (0 0 4.074366543152521);
+        type            zeroGradient; 
+        // 사출 속도 제어 시 압력은 zeroGradient로 두는 경우가 많음
+        // 보압 제어 시에는 fixedValue 로 0 적용
     }
     walls
     {
-        type            noSlip; // 벽면에서는 속도 0
+        type            zeroGradient;
     }
     outlet
     {
-        type            zeroGradient;
+        type            fixedValue;
+        value           uniform 0; // 출구 대기압
     }
 }

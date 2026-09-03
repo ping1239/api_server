@@ -1,73 +1,124 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File, Form
-import os
-import json
-import shutil
+from __future__ import annotations
+
+import threading
+from pathlib import Path
+from typing import Callable
+from uuid import uuid4
+
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from worker_tasks import run_simulation
+from fastapi.responses import FileResponse
 
-app = FastAPI(title="OpenFOAM Worker Agent")
+from schemas import parse_reference_config
+from settings import default_results_root
+from services.reference_results import process_reference_result
+from services.storage import canonical_uuid, contained_child
+from worker_tasks import run_reference_result_job
 
-# CORS 설정 (프론트엔드 포트 허용)
-app.add_middleware(
-    CORSMiddleware,
-    # CORS 허용 주소에는 뒤에 /api/... 같은 경로를 붙이면 절대 안 됩니다! (IP와 포트까지만 작성)
-    # 맘 편하게 모든 접속을 허용하려면 ["*"] 로 두시면 됩니다.
-    allow_origins=["http://192.168.0.79:5174", "http://localhost:5174"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# 메모리 DB (간단한 테스트용)
-job_status_db = {}
+Processor = Callable[..., dict]
+PUBLIC_ARTIFACTS = {
+    "fill_final.png",
+    "fill_animation.mp4",
+    "pressure_final.png",
+    "temperature_final.png",
+    "shear_rate_final.png",
+}
 
-os.makedirs("temp_uploads", exist_ok=True)
 
-@app.post("/api/simulate", status_code=202)
-async def start_simulation(
-    background_tasks: BackgroundTasks,
-    stl_file: UploadFile = File(...),
-    config_json: str = Form(...)
-):
-    try:
-        parameters = json.loads(config_json)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid config_json")
+def create_app(
+    *,
+    results_dir: Path | None = None,
+    processor: Processor = process_reference_result,
+) -> FastAPI:
+    """Create the API app; injectable paths/processors keep tests isolated."""
+    app = FastAPI(title="RMS OpenFOAM Reference Result API", version="1.0.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://192.168.0.79:5174", "http://localhost:5174"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-    job_id = parameters.get("job_id")
-    if not job_id:
-        raise HTTPException(status_code=400, detail="job_id missing in config_json")
+    result_root = (results_dir or default_results_root()).resolve()
+    result_root.mkdir(parents=True, exist_ok=True)
+    app.state.results_dir = result_root
+    app.state.job_status_db = {}
+    app.state.job_lock = threading.Lock()
+    app.state.processor = processor
 
-    if job_id in job_status_db:
-        raise HTTPException(status_code=400, detail="Job ID already exists")
+    @app.get("/results/{simulation_id}/{filename}", name="result_artifact")
+    async def get_result_artifact(simulation_id: str, filename: str) -> FileResponse:
+        try:
+            canonical_uuid(simulation_id)
+            if filename not in PUBLIC_ARTIFACTS:
+                raise ValueError("artifact is not public")
+            job_dir = contained_child(result_root, simulation_id)
+            artifact = contained_child(job_dir, filename)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="Result artifact not found") from exc
+        if not artifact.is_file():
+            raise HTTPException(status_code=404, detail="Result artifact not found")
+        return FileResponse(artifact)
 
-    # 업로드된 STL 파일을 임시 폴더에 저장
-    temp_stl_path = f"temp_uploads/{job_id}_{stl_file.filename}"
-    with open(temp_stl_path, "wb") as buffer:
-        shutil.copyfileobj(stl_file.file, buffer)
+    @app.post("/api/simulate", status_code=202)
+    async def start_simulation(
+        background_tasks: BackgroundTasks,
+        config_json: str = Form(...),
+        stl_file: UploadFile | None = File(default=None),
+    ) -> dict:
+        config = parse_reference_config(config_json)
 
-    # 1. 상태 초기화
-    job_status_db[job_id] = {
-        "status": "PENDING",
-        "progress": 0,
-        "results": None
-    }
-    
-    # 워커에 STL 파일 경로 전달
-    parameters["_temp_stl_path"] = temp_stl_path
-    
-    # 2. 백그라운드 태스크로 해석 작업 던지기 (비동기)
-    background_tasks.add_task(run_simulation, job_id, parameters, job_status_db)
-    
-    return {"message": "Simulation started", "job_id": job_id, "status": "PENDING"}
+        # Reference mode deliberately does not persist or inspect STL data.
+        if stl_file is not None:
+            await stl_file.close()
 
-@app.get("/api/simulation/status/{job_id}")
-async def get_status(job_id: str):
-    if job_id not in job_status_db:
-        raise HTTPException(status_code=404, detail="Job not found")
-    
-    return job_status_db[job_id]
+        simulation_id = str(uuid4())
+        initial_state = {
+            "simulation_id": simulation_id,
+            "client_job_id": config.client_job_id,
+            "execution_mode": config.mode,
+            "reference_case": config.reference_case,
+            "uploaded_stl_used": False,
+            "status": "REFERENCE_SELECTED",
+            "stage": "REFERENCE_SELECTED",
+            "progress": 10,
+            "results": None,
+            "error": None,
+        }
+        with app.state.job_lock:
+            app.state.job_status_db[simulation_id] = initial_state
 
-@app.get("/")
-async def root():
-    return {"message": "Worker API is running. Check /docs for Swagger UI."}
+        background_tasks.add_task(
+            run_reference_result_job,
+            simulation_id,
+            config.model_dump(),
+            app.state.job_status_db,
+            app.state.job_lock,
+            app.state.results_dir,
+            app.state.processor,
+        )
+
+        return initial_state
+
+    @app.get("/api/simulation/status/{simulation_id}")
+    @app.get("/api/status/{simulation_id}", include_in_schema=False)
+    async def get_status(simulation_id: str) -> dict:
+        with app.state.job_lock:
+            status = app.state.job_status_db.get(simulation_id)
+            if status is None:
+                raise HTTPException(status_code=404, detail="Simulation not found")
+            return dict(status)
+
+    @app.get("/")
+    async def root() -> dict:
+        return {
+            "message": "RMS OpenFOAM reference-result API is running.",
+            "mode": "reference_result",
+        }
+
+    return app
+
+
+app = create_app()

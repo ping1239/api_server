@@ -22,14 +22,14 @@ geometry
     gate_patch
     {
         type searchableSphere;
-        centre (-0.8628458096087499 5.000000000000007 20.392767373979915);
+        centre (-5.06 -2.48 4.89);
         radius 0.0025; // to be replaced dynamically later
     }
     
     vent_patch
     {
         type searchableSphere;
-        centre (6.65100388353877 5.000000000000007 19.875304843719405);
+        centre (-2.5 -2.48 6.14);
         radius 0.001;
     }
 }

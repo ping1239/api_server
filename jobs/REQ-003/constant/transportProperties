@@ -10,28 +10,26 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      snappyHexMeshDict;
+    location    "constant";
+    object      transportProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// Dummy file to demonstrate boundary condition coordinate extraction
+phases (phase1);
 
-geometry
+phase1
 {
-    gate_patch
-    {
-        type searchableSphere;
-        centre (-0.8628458096087499 5.000000000000007 20.392767373979915);
-        radius 0.0025; // to be replaced dynamically later
-    }
+    transportModel  CrossWLF;
     
-    vent_patch
+    CrossWLFCoeffs
     {
-        type searchableSphere;
-        centre (6.65100388353877 5.000000000000007 19.875304843719405);
-        radius 0.001;
+        n               0.35;
+        tauStar         20000;
+        D1              1.1e13; // default or placeholder
+        D2              403.15; // e.g. 130 C
+        D3              0;
+        A1              25.0;
+        A2              51.6;
+        T0              383.15; // e.g. 110 C
     }
 }
-
-// ... other snappy parameters ...
